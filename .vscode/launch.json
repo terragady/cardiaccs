@@ -1,5 +1,5 @@
 // AUTOMATICALLY GENERATED FILE. PLEASE DO NOT MODIFY IT MANUALLY
-
+//
 // PIO Unified Debugger
 //
 // Documentation: https://docs.platformio.org/page/plus/debugging.html
@@ -15,12 +15,12 @@
             "executable": "d:/Yallow/Cardiaccs/software/cardiaccs/.pio/build/adafruit_feather_m0_express/firmware.elf",
             "projectEnvName": "adafruit_feather_m0_express",
             "toolchainBinDir": "C:/Users/Marcin/.platformio/packages/toolchain-gccarmnoneeabi/bin",
+            "internalConsoleOptions": "openOnSessionStart",
             "svdPath": "C:/Users/Marcin/.platformio/platforms/atmelsam/misc/svd/ATSAMD21G18A.svd",
             "preLaunchTask": {
                 "type": "PlatformIO",
                 "task": "Pre-Debug"
-            },
-            "internalConsoleOptions": "openOnSessionStart"
+            }
         },
         {
             "type": "platformio-debug",
@@ -29,8 +29,8 @@
             "executable": "d:/Yallow/Cardiaccs/software/cardiaccs/.pio/build/adafruit_feather_m0_express/firmware.elf",
             "projectEnvName": "adafruit_feather_m0_express",
             "toolchainBinDir": "C:/Users/Marcin/.platformio/packages/toolchain-gccarmnoneeabi/bin",
-            "svdPath": "C:/Users/Marcin/.platformio/platforms/atmelsam/misc/svd/ATSAMD21G18A.svd",
-            "internalConsoleOptions": "openOnSessionStart"
+            "internalConsoleOptions": "openOnSessionStart",
+            "svdPath": "C:/Users/Marcin/.platformio/platforms/atmelsam/misc/svd/ATSAMD21G18A.svd"
         }
     ]
 }
