@@ -10,7 +10,7 @@ M2M_LM75A lm75a;
 // debug
 bool debug = true;
 
-int MPU = 0x69;
+int MPU = 0x68;
 float AccX, AccY, AccZ, AccW;
 
 void setup()
@@ -42,10 +42,10 @@ void loop()
   }
   // === Read acceleromter data === //
   Wire.beginTransmission(MPU);
-  Wire.write(0x1F); // Start with register 0x3B (ACCEL_XOUT_H)
+  Wire.write(0x75); // Start with register 0x3B (ACCEL_XOUT_H)
   Wire.requestFrom(MPU, 1, true); // Read 6 registers total, each axis value is stored in 2 registers
   // //For a range of +-2g, we need to divide the raw values by 16384, according to the datasheet
-  AccX = (Wire.read() << 8 | Wire.read()) / 16384.0; // Y-axis value
+  AccX = Wire.read(); // Y-axis value
   // AccY = (Wire.read() << 8 | Wire.read()) / 16384.0; // Y-axis value
   // AccZ = (Wire.read() << 8 | Wire.read()) / 16384.0; // Z-axis value
   // AccW = (Wire.read() << 8 | Wire.read()) / 16384.0; // Z-axis value

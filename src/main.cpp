@@ -23,6 +23,7 @@ int16_t gyroData[3];
 signed int internal_timer = 0;
 bool green_led_status = false;
 bool red_led_status = false;
+float current_voltage = 5.00;
 
 bool init_sensor()
 {
@@ -90,13 +91,52 @@ int disc_sensor()
 
   return 0;
 }
+float check_voltage()
+{
+  float volt = analogRead(BATT_SENSOR);
+  volt *= 2;    // we divided by 2, so multiply back
+  volt *= 3;    // Multiply by 3.3V, our reference voltage
+  volt /= 4096; // convert to voltage
+  if (debug)
+    Serial.print("System Voltage is: ");
+  if (debug)
+    Serial.println(volt);
+  return volt;
+}
 void setup()
 {
   pinMode(EN_5V_PIN, OUTPUT);
   pinMode(REDLED, OUTPUT);
   pinMode(GREENLED, OUTPUT);
+  analogReadResolution(12);
+
+  Wire.begin(); // Wire communication begin
+  Wire.setClock(400000);
+  Serial.begin(115200);
+  delay(2000);
+  current_voltage = check_voltage();
+  while (current_voltage < 3.4)
+  {
+    if (debug)
+      Serial.println("Voltage is lower than 3.2");
+    digitalWrite(REDLED, HIGH);
+    delay(100);
+    digitalWrite(REDLED, LOW);
+    delay(3000);
+    digitalWrite(REDLED, HIGH);
+    delay(100);
+    digitalWrite(REDLED, LOW);
+    delay(3000);
+    digitalWrite(REDLED, HIGH);
+    delay(100);
+    digitalWrite(REDLED, LOW);
+    delay(3000);
+    current_voltage = check_voltage();
+  }
+  digitalWrite(REDLED, LOW);
   digitalWrite(EN_5V_PIN, HIGH);
-  // analogReadResolution(12);
+
+
   lm75a.begin();
   if (debug)
   {
@@ -105,10 +145,6 @@ void setup()
     Serial.println(F(" *C"));
   }
 
-  Wire.begin(); // Wire communication begin
-  Wire.setClock(400000);
-  Serial.begin(115200);
-  delay(100);
   if (debug)
     delay(3000);
 
@@ -116,10 +152,13 @@ void setup()
   sensor_type = disc_sensor();
   while (sensor_type == 0)
   {
-    delay(200);
+    digitalWrite(REDLED, LOW);
+    delay(150);
     if (debug)
       Serial.println("Sensor not discovered, trying again!");
     digitalWrite(REDLED, HIGH);
+    delay(150);
+
     sensor_type = disc_sensor();
   }
   digitalWrite(REDLED, LOW);
@@ -135,20 +174,64 @@ void setup()
   red_led_status = false;
   digitalWrite(REDLED, LOW);
 
+  check_voltage();
+
   if (debug)
     Serial.println("Setup Completed. Device is starting reading data.");
+  digitalWrite(GREENLED, HIGH);
+  delay(150);
+  digitalWrite(GREENLED, LOW);
+  delay(100);
+  digitalWrite(GREENLED, HIGH);
+  delay(150);
+  digitalWrite(GREENLED, LOW);
+  delay(100);
+  digitalWrite(GREENLED, HIGH);
+  delay(150);
+  digitalWrite(GREENLED, LOW);
+  delay(1000);
 }
 
 void loop()
 {
+  ////// internal timer/////
   internal_timer++;
-  if (internal_timer > 10000)
+  if (internal_timer > 1000)
     internal_timer = 1;
+  //////////////////////////
+
+  if (internal_timer == 1)
+  {
+    current_voltage = check_voltage();
+    while (current_voltage < 3.4)
+    {
+      if (debug)
+        Serial.println("Voltage is lower than 3.2");
+      digitalWrite(EN_5V_PIN, LOW);
+
+      digitalWrite(REDLED, HIGH);
+      delay(100);
+      digitalWrite(REDLED, LOW);
+      delay(3000);
+      digitalWrite(REDLED, HIGH);
+      delay(100);
+      digitalWrite(REDLED, LOW);
+      delay(3000);
+      digitalWrite(REDLED, HIGH);
+      delay(100);
+      digitalWrite(REDLED, LOW);
+      delay(3000);
+      current_voltage = check_voltage();
+    }
+    digitalWrite(EN_5V_PIN, HIGH);
+  }
 
   if (internal_timer % 200 == 0 && !red_led_status)
   {
     green_led_status = !green_led_status;
     digitalWrite(GREENLED, green_led_status);
+    if (current_voltage < 3.7)
+      digitalWrite(REDLED, !green_led_status);
   }
 
   if (sensor_type == 1)
