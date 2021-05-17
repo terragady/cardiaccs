@@ -28,7 +28,7 @@ ICM42605 ICM42605(&i2c_0); // instantiate ICM42605 class
 #define BATT_SENSOR 9
 
 // debug
-bool debug = true;
+bool debug = false;
 
 // variables
 bool initialized;
@@ -246,7 +246,8 @@ void loop()
     digitalWrite(EN_5V_PIN, HIGH);
   }
 
-  if (internal_timer % 200 == 0 && !red_led_status)
+// here you can control the LED read data freq
+  if (internal_timer % 50 == 0 && !red_led_status)
   {
     green_led_status = !green_led_status;
     digitalWrite(GREENLED, green_led_status);
@@ -287,6 +288,8 @@ void loop()
     gyroData[1] = (float)ICM42605Data[5];
     gyroData[2] = (float)ICM42605Data[6];
   }
+
+  /// writing directly to DAC output
   Wire.beginTransmission(0x0C);
   Wire.write(0b00110000);
   Wire.write(accData[0]);
@@ -317,9 +320,5 @@ void loop()
   Wire.write(gyroData[2]);
   Wire.write(gyroData[2] >> 8);
   Wire.endTransmission();
-
-  // Wire.write(gyroData[0]);
-  // Wire.write(gyroData[1]);
-  // Wire.write(gyroData[2]);
   Wire.endTransmission();
 }
