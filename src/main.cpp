@@ -2,9 +2,24 @@
 #include <Wire.h> //include Wire.h library
 #include <M2M_LM75A.h>
 #include "BMA355.h"
+#include "ICM42605.h"
+#include "I2Cdev.h"
 
 BMA355 cs1;
 M2M_LM75A lm75a;
+#define I2C_BUS Wire    // Define the I2C bus (Wire instance) you wish to use
+I2Cdev i2c_0(&I2C_BUS); // Instantiate the I2Cdev object and point to the desired I2C bus
+
+/* Specify sensor parameters (sample rate is twice the bandwidth)
+ * choices are:
+      AFS_2G, AFS_4G, AFS_8G, AFS_16G  
+      GFS_15_125DPS, GFS_31_25DPS, GFS_62_5DPS, GFS_125DPS, GFS_250DPS, GFS_500DPS, GFS_1000DPS, GFS_2000DPS 
+      AODR_1_5625Hz, AODR_3_125Hz, AODR_6_25Hz, AODR_12_5Hz, AODR_25Hz, AODR_50Hz, AODR_100Hz, AODR_200Hz, AODR_500Hz, AODR_1000Hz, AODR_2000Hz, AODR_4000Hz, AODR_8000Hz
+      GODR_12_5Hz, GODR_25Hz, GODR_50Hz, GODR_100Hz, GODR_200Hz, GODR_500Hz, GODR_1000Hz, GODR_2000Hz, GODR_4000Hz, GODR_8000Hz
+*/
+uint8_t Ascale = AFS_2G, Gscale = GFS_250DPS, AODR = AODR_1000Hz, GODR = GODR_1000Hz;
+int16_t ICM42605Data[7];   // Stores the 16-bit signed sensor output
+ICM42605 ICM42605(&i2c_0); // instantiate ICM42605 class
 
 // define pins
 #define EN_5V_PIN 4
@@ -55,6 +70,8 @@ bool init_sensor()
   }
   else if (sensor_type == 2)
   {
+    ICM42605.reset(); // software reset ICM42605 to default registers
+    ICM42605.init(Ascale, Gscale, AODR, GODR);
     return true;
     // CS2 sensor init procedure
   }
@@ -78,13 +95,13 @@ int disc_sensor()
     return 1;
   }
   //check if CS2 responds with success
-  Wire.beginTransmission(0x00);
+  Wire.beginTransmission(0x68);
   if (Wire.endTransmission() == 0)
   {
     if (debug)
     {
       Serial.print("Discovered Sensor Type: ");
-      Serial.println("MPU9250");
+      Serial.println("IMC");
     }
     return 2;
   }
@@ -114,6 +131,8 @@ void setup()
   Wire.setClock(400000);
   Serial.begin(115200);
   delay(2000);
+  if (debug)
+    Serial.println("System starting up...");
   current_voltage = check_voltage();
   while (current_voltage < 3.4)
   {
@@ -135,8 +154,9 @@ void setup()
   }
   digitalWrite(REDLED, LOW);
   digitalWrite(EN_5V_PIN, HIGH);
+  delay(2000);
 
-
+  delay(1000);
   lm75a.begin();
   if (debug)
   {
@@ -196,7 +216,7 @@ void loop()
 {
   ////// internal timer/////
   internal_timer++;
-  if (internal_timer > 1000)
+  if (internal_timer > 100000)
     internal_timer = 1;
   //////////////////////////
 
@@ -231,7 +251,9 @@ void loop()
     green_led_status = !green_led_status;
     digitalWrite(GREENLED, green_led_status);
     if (current_voltage < 3.7)
+    {
       digitalWrite(REDLED, !green_led_status);
+    }
   }
 
   if (sensor_type == 1)
@@ -254,4 +276,50 @@ void loop()
       return;
     }
   }
+  else if (sensor_type == 2)
+  {
+    ICM42605.readData(ICM42605Data);
+    accData[0] = (float)ICM42605Data[1];
+    accData[1] = (float)ICM42605Data[2];
+    accData[2] = (float)ICM42605Data[3];
+
+    gyroData[0] = (float)ICM42605Data[4];
+    gyroData[1] = (float)ICM42605Data[5];
+    gyroData[2] = (float)ICM42605Data[6];
+  }
+  Wire.beginTransmission(0x0C);
+  Wire.write(0b00110000);
+  Wire.write(accData[0]);
+  Wire.write(accData[0] >> 8);
+  Wire.endTransmission();
+  Wire.beginTransmission(0x0C);
+  Wire.write(0b00110001);
+  Wire.write(accData[1]);
+  Wire.write(accData[1] >> 8);
+  Wire.endTransmission();
+  Wire.beginTransmission(0x0C);
+  Wire.write(0b00010010);
+  Wire.write(accData[2]);
+  Wire.write(accData[2] >> 8);
+  Wire.endTransmission();
+  Wire.beginTransmission(0x0C);
+  Wire.write(0b00010011);
+  Wire.write(gyroData[0]);
+  Wire.write(gyroData[0] >> 8);
+  Wire.endTransmission();
+  Wire.beginTransmission(0x0C);
+  Wire.write(0b00010100);
+  Wire.write(gyroData[1]);
+  Wire.write(gyroData[1] >> 8);
+  Wire.endTransmission();
+  Wire.beginTransmission(0x0C);
+  Wire.write(0b00010101);
+  Wire.write(gyroData[2]);
+  Wire.write(gyroData[2] >> 8);
+  Wire.endTransmission();
+
+  // Wire.write(gyroData[0]);
+  // Wire.write(gyroData[1]);
+  // Wire.write(gyroData[2]);
+  Wire.endTransmission();
 }
